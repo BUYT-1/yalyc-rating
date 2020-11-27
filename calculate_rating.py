@@ -32,6 +32,7 @@ def get_authorized_session() -> requests.Session:
     login = input('Логин: ')
     password = input('Пароль: ')
     session = requests.Session()
+    print('Авторизуюсь...')
     authorization_response = session.post(
         AUTHORIZATION_URL,
         data={
@@ -156,13 +157,15 @@ def get_points_on_review(tasks_json: Iterable[dict]) -> defaultdict:
 
 
 if __name__ == '__main__':
+    print('Для того, чтобы получить необходимые данные, требуется зайти в аккаунт, привязанный к Яндекс.Лицею.')
     session = get_authorized_session()
+
     courses_json = get_courses_json(session)
     course_json = choose_course_json(courses_json)
-
     print('Беру задания...')
     tasks_json = get_tasks_json(session, course_json)
 
+    print('Подбираю коэффиценты...')
     primary_points_by_type_raw = calc_points_by_type_raw(tasks_json)
     bonus_rating = 5 * primary_points_by_type_raw['additional-3'] / 100
     bonus_rating += course_json['bonusScore']
@@ -172,7 +175,6 @@ if __name__ == '__main__':
     normal_rating = course_json['rating']
     true_rating = normal_rating - bonus_rating
 
-    print('Подбираю коэффиценты...')
     lessons_with_types = approximate_coefficients(primary_points_by_type, true_rating)
 
     on_review_prim_points_type = points_by_type_convert(get_points_on_review(tasks_json))
@@ -180,16 +182,16 @@ if __name__ == '__main__':
     rating_on_review = calculate_rating(on_review_prim_points_type, lessons_with_types)
 
     print()
+    print('Внимание! Данная информация является лишь предположением на основе имеющихся данных.')
     print('Предполагается, что за все задачи, находящиеся на проверке, вы получите максимальный балл.')
-    print('Предполагается, что кол-во уроков с классной работой равно кол-ву уроков с домашней работой.')
-    print('Внимание! Данная информация не стопроцентная. За точность не ручаюсь!')
+    print('Если данных мало, то результаты могут быть крайне не точными.')
     print()
     print(f'Рейтинг: {normal_rating:.2f}')
     print(f'Рейтинг без прибавок: {true_rating:.2f}')
     print(f'Рейтинг на проверке: {rating_on_review:.2f}')
     print(f'Возможный рейтинг: {normal_rating + rating_on_review:.2f}')
     print()
-    print('Кстати, предполагаемое кол-во уроков, в которых содержатся задачи каждого типа:')
+    print('Предполагаемое кол-во уроков, в которых содержатся задачи каждого типа:')
     if lessons_with_types in KNOWN_COEFFICIENTS:
         for name, value in zip(('Классная работа', 'Домашняя работа', 'Дополнительные задачи',
                                 'Контрольная работа', 'Самостоятельная работа'), lessons_with_types):
