@@ -66,15 +66,15 @@ def choose_course_json(courses_data: List[dict]) -> dict:
             for num, course in enumerate(courses_data):
                 print(num, course['title'])
             num = int(input('Номер курса: '))
-            assert num in range(len(courses_data))
-        except (ValueError, AssertionError):
+            if num not in range(len(courses_data)):
+                raise ValueError
+        except ValueError:
             print('Введите номер курса.')
         else:
             return courses_data[num]
 
 
-def get_tasks_json(session: requests.Session,
-                   course_json: dict) -> dict:
+def get_tasks_json(session: requests.Session, course_json: dict) -> dict:
     tasks_json: dict = session.get(
         TASKS_API_URL,
         params={
@@ -108,8 +108,7 @@ def points_by_type_convert(points_by_type_raw: defaultdict) -> TaskTypeInfo:
                         individual_work=individual_work_points)
 
 
-def calculate_rating(points: TaskTypeInfo,
-                     lessons_w_types: TaskTypeInfo) -> float:
+def calculate_rating(points: TaskTypeInfo, lessons_w_types: TaskTypeInfo) -> float:
     classwork_rating = \
         points.classwork / (10 * lessons_w_types.classwork) if lessons_w_types.classwork else 0
     homework_rating = \
