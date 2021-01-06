@@ -128,8 +128,8 @@ def calculate_rating(points: TaskTypeInfo, lessons_w_types: TaskTypeInfo) -> flo
 
 
 def generate_possible_coefficients():
-    for indwrk, ctwrk, addwrk, hmwrk, clwrk in product(range(0, 5), range(2, 5), range(20, 51), range(20, 51), range(20, 51)):
-        yield TaskTypeInfo(classwork=clwrk, homework=hmwrk, additional=addwrk,
+    for indwrk, ctwrk, addwrk, clhmwrk in product(range(0, 5), range(2, 5), range(20, 51), range(20, 51)):
+        yield TaskTypeInfo(classwork=clhmwrk, homework=clhmwrk, additional=addwrk,
                            control_work=ctwrk, individual_work=indwrk)
 
 
@@ -139,6 +139,11 @@ def approximate_coefficients(points: TaskTypeInfo, rating: float):
         return best_known
     return min(generate_possible_coefficients(),
                key=lambda co: (abs(rating - calculate_rating(points, co)),
+                               # It's likely that the number of lessons with classwork will be
+                               # the same as the number of lessons with homework.
+                               -min(co.classwork, co.homework) / max(co.classwork, co.homework),
+                               # The numbers of lessons with classwork and lessons with
+                               # additional work are generally pretty close.
                                -min(co.classwork, co.additional) / max(co.classwork, co.additional)))
 
 
@@ -199,8 +204,7 @@ if __name__ == '__main__':
     else:
         for name, value, key in zip(('Классная работа', 'Домашняя работа', 'Дополнительные задачи',
                                      'Контрольная работа / Проект', 'Самостоятельная работа'), lessons_with_types,
-                                    ('classwork', 'homework', 'additional', 'control-work',
-                                     'individual-work')):
+                                    ('classwork', 'homework', 'additional', 'control-work', 'individual-work')):
             points_for_type = primary_points_by_type_raw[key]
             if key == 'control-work':
                 points_for_type += primary_points_by_type_raw['additional-3']
